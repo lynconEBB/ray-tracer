@@ -48,6 +48,44 @@ class material {
     }
 };
 
+class mix : public material {
+public:
+    mix(shared_ptr<texture> tex, shared_ptr<material> m1, shared_ptr<material> m2) : tex(tex), m1(m1), m2(m2) {}
+
+    bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
+        color col = tex->value(rec.u,rec.v,rec.p);
+
+        if (col.near_zero()) {
+            return m1->scatter(r_in,rec,srec);
+        } else {
+            return m2->scatter(r_in,rec,srec);
+        }
+    }
+
+    double scattering_pdf(const ray &r_in, const hit_record &rec, const ray &scattered) const override {
+        color col = tex->value(rec.u,rec.v,rec.p);
+        if (col.near_zero()) {
+            return m1->scattering_pdf(r_in,rec,scattered);
+        } else {
+            return m2->scattering_pdf(r_in,rec,scattered);
+        }
+    }
+
+    color emitted(const ray &r_in, const hit_record &rec, double u, double v, const point3 &p) const override {
+        color col = tex->value(rec.u,rec.v,rec.p);
+
+        if (col.near_zero()) {
+            return m1->emitted(r_in,rec,u,v,p);
+        } else {
+            return m2->emitted(r_in,rec,u,v,p);
+        }
+    }
+
+private:
+    shared_ptr<texture> tex;
+    shared_ptr<material> m1;
+    shared_ptr<material> m2;
+};
 
 class lambertian : public material {
   public:
@@ -96,10 +134,11 @@ class metal : public material {
 
 class dielectric : public material {
   public:
-    dielectric(double refraction_index) : refraction_index(refraction_index) {}
+    dielectric(double refraction_index, color albedo) : refraction_index(refraction_index), albedo(albedo) {}
+    explicit dielectric(double refraction_index) : refraction_index(refraction_index), albedo(vec3(1,1,1)) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
-        srec.attenuation = color(1.0, 1.0, 1.0);
+        srec.attenuation = albedo;
         srec.pdf_ptr = nullptr;
         srec.skip_pdf = true;
         double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
@@ -124,6 +163,7 @@ class dielectric : public material {
     // Refractive index in vacuum or air, or the ratio of the material's refractive index over
     // the refractive index of the enclosing media
     double refraction_index;
+    color albedo;
 
     static double reflectance(double cosine, double refraction_index) {
         // Use Schlick's approximation for reflectance.

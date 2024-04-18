@@ -65,6 +65,9 @@ class vec3 {
     static vec3 random(double min, double max) {
         return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
     }
+    static vec3 random(double minx, double maxx, double miny, double maxy, double minz, double maxz) {
+        return vec3(random_double(minx,maxx), random_double(miny,maxy), random_double(minz,maxz));
+    }
 };
 
 // point3 is just an alias for vec3, but useful for geometric clarity in the code.

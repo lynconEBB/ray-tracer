@@ -67,10 +67,9 @@ class checker_texture : public texture {
     shared_ptr<texture> odd;
 };
 
-
 class image_texture : public texture {
   public:
-    image_texture(const char* filename) : image(filename) {}
+    image_texture(const char* filename, double scale_x,double scale_y) : image(filename), scale_x(scale_x), scale_y(scale_y) {}
 
     color value(double u, double v, const point3& p) const override {
         // If we have no texture data, then return solid cyan as a debugging aid.
@@ -79,6 +78,14 @@ class image_texture : public texture {
         // Clamp input texture coordinates to [0,1] x [1,0]
         u = interval(0,1).clamp(u);
         v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
+
+        // Adjust texture coordinates based on scale
+        u *= scale_x;
+        v *= scale_y;
+
+        // Wrap texture coordinates
+        u -= floor(u);
+        v -= floor(v);
 
         auto i = int(u * image.width());
         auto j = int(v * image.height());
@@ -90,6 +97,8 @@ class image_texture : public texture {
 
   private:
     rtw_image image;
+    double scale_x;
+    double scale_y;
 };
 
 
@@ -100,7 +109,7 @@ class noise_texture : public texture {
     noise_texture(double scale) : scale(scale) {}
 
     color value(double u, double v, const point3& p) const override {
-        return color(.5, .5, .5) * (1 + sin(scale * p.z() + 10 * noise.turb(p, 7)));
+        return color(.5, .5, .5) * (1 + sin(scale * p.z() + 10 * noise.noise(p)));
     }
 
   private:

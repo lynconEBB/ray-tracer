@@ -13,7 +13,6 @@
 
 #include "rtweekend.h"
 
-
 class perlin {
   public:
     perlin() {
